@@ -1,0 +1,13 @@
+name: "@adonaivera/claude-agent"
+version: "1.0.0"
+description: "Claude AI agent panel for FiftyOne"
+fiftyone:
+  version: ">=0.23.7"
+url: "https://github.com/AdonaiVera/claude-agent"
+license: "Apache-2.0"
+operators:
+  - claude_agent
+  - save_api_key
+  - send_message
+secrets:
+  - ANTHROPIC_API_KEY
