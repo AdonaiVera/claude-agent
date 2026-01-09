@@ -5,9 +5,8 @@ fiftyone:
   version: ">=0.23.7"
 url: "https://github.com/AdonaiVera/claude-agent"
 license: "Apache-2.0"
+js_bundle: dist/index.umd.js
 operators:
-  - claude_agent
-  - save_api_key
   - send_message
 secrets:
   - ANTHROPIC_API_KEY

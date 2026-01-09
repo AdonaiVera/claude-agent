@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+.yarn/
+.pnp.*
+
+# Build cache
+.cache/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Yarn
+.yarnrc.yml
+yarn.lock
