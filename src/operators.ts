@@ -8,7 +8,7 @@
  * | `voxel51.com <https://voxel51.com/>`_
  */
 
-import { Operator, OperatorConfig } from "@fiftyone/operators";
+import { Operator, OperatorConfig, ExecutionContext } from "@fiftyone/operators";
 import { useSetRecoilState } from "recoil";
 import {
   messagesAtom,
@@ -17,10 +17,6 @@ import {
   pendingConfirmationAtom,
 } from "./state/chatAtoms";
 import type { Message, ToolCall, PendingConfirmation } from "./types";
-
-// ---------------------------------------------------------------------------
-// stream_message_start — create a new (empty) assistant message
-// ---------------------------------------------------------------------------
 
 export class StreamMessageStart extends Operator {
   get config(): OperatorConfig {
@@ -35,7 +31,7 @@ export class StreamMessageStart extends Operator {
     };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages, setStreamingId, setStreaming } = ctx.hooks;
     const { message_id } = ctx.params;
 
@@ -54,9 +50,6 @@ export class StreamMessageStart extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// stream_chunk — append a text delta to the active message
-// ---------------------------------------------------------------------------
 
 export class StreamChunk extends Operator {
   get config(): OperatorConfig {
@@ -67,7 +60,7 @@ export class StreamChunk extends Operator {
     return { setMessages: useSetRecoilState(messagesAtom) };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages } = ctx.hooks;
     const { delta, message_id } = ctx.params;
 
@@ -79,9 +72,6 @@ export class StreamChunk extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// stream_complete — finalize the streaming message
-// ---------------------------------------------------------------------------
 
 export class StreamComplete extends Operator {
   get config(): OperatorConfig {
@@ -96,7 +86,7 @@ export class StreamComplete extends Operator {
     };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages, setStreamingId, setStreaming } = ctx.hooks;
     const { message_id } = ctx.params;
 
@@ -110,9 +100,6 @@ export class StreamComplete extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// stream_error — append an error notice and stop streaming
-// ---------------------------------------------------------------------------
 
 export class StreamError extends Operator {
   get config(): OperatorConfig {
@@ -127,7 +114,7 @@ export class StreamError extends Operator {
     };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages, setStreaming, setStreamingId } = ctx.hooks;
     const { error, message_id } = ctx.params;
 
@@ -147,9 +134,6 @@ export class StreamError extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// tool_call_start — add a new executing tool call card
-// ---------------------------------------------------------------------------
 
 export class ToolCallStart extends Operator {
   get config(): OperatorConfig {
@@ -160,7 +144,7 @@ export class ToolCallStart extends Operator {
     return { setMessages: useSetRecoilState(messagesAtom) };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages } = ctx.hooks;
     const { tool_id, tool_name, message_id } = ctx.params;
 
@@ -180,9 +164,6 @@ export class ToolCallStart extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// tool_result — mark a tool call as completed with its result
-// ---------------------------------------------------------------------------
 
 export class ToolResult extends Operator {
   get config(): OperatorConfig {
@@ -193,7 +174,7 @@ export class ToolResult extends Operator {
     return { setMessages: useSetRecoilState(messagesAtom) };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages } = ctx.hooks;
     const { tool_id, result, message_id } = ctx.params;
 
@@ -213,9 +194,6 @@ export class ToolResult extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// tool_blocked — mark a tool call as blocked with a reason
-// ---------------------------------------------------------------------------
 
 export class ToolBlocked extends Operator {
   get config(): OperatorConfig {
@@ -226,7 +204,7 @@ export class ToolBlocked extends Operator {
     return { setMessages: useSetRecoilState(messagesAtom) };
   }
 
-  async execute(ctx: { params: Record<string, string>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages } = ctx.hooks;
     const { tool_id, reason, message_id } = ctx.params;
 
@@ -246,9 +224,6 @@ export class ToolBlocked extends Operator {
   }
 }
 
-// ---------------------------------------------------------------------------
-// confirmation_required — pause streaming and show the confirmation modal
-// ---------------------------------------------------------------------------
 
 export class ConfirmationRequired extends Operator {
   get config(): OperatorConfig {
@@ -265,7 +240,7 @@ export class ConfirmationRequired extends Operator {
     };
   }
 
-  async execute(ctx: { params: Record<string, unknown>; hooks: ReturnType<typeof this.useHooks> }) {
+  async execute(ctx: ExecutionContext) {
     const { setMessages, setPendingConfirmation } = ctx.hooks;
     const {
       pending_id,

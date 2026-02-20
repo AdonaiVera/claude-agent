@@ -34,7 +34,6 @@ export const ClaudeAgentPanel: React.FC = () => {
   const loadConfig = useLoadConfig();
   const saveConfig = useSaveConfig();
 
-  // Load persisted config on mount
   useEffect(() => {
     if (!configLoaded) {
       loadConfig().then((result: any) => {
@@ -66,7 +65,6 @@ export const ClaudeAgentPanel: React.FC = () => {
   }, []);
 
   const handleSend = async (message: string) => {
-    // Add user message to state
     const userMsgId = `user-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
@@ -78,13 +76,11 @@ export const ClaudeAgentPanel: React.FC = () => {
       },
     ]);
 
-    // Build history for API (exclude current message)
     const history = messages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
 
-    // Get active MCP config (first enabled server)
     const enabledServer = config.mcpServers.find((s) => s.enabled);
     const mcpConfig = enabledServer
       ? {
@@ -103,7 +99,6 @@ export const ClaudeAgentPanel: React.FC = () => {
       maxTokens: config.settings.maxTokens,
     });
 
-    // Auto-save history if persistence is on
     if (config.settings.persistHistory) {
       const allMessages = [
         ...messages,
@@ -238,7 +233,6 @@ export const ClaudeAgentPanel: React.FC = () => {
   );
 };
 
-// Inline skills tab component
 const SkillsTab: React.FC<{
   availableSkills: string[];
   activeSkills: string[];

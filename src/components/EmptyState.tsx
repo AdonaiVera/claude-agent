@@ -39,7 +39,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onPromptClick }) => {
   const theme = useTheme();
   const config = useRecoilValue(configAtom);
 
-  // Build skill-based chips from active skills
   const skillChips = config.activeSkills.slice(0, 4).map((skill) => ({
     label: skill.replace("fiftyone-", "").replace(/-/g, " "),
     prompt: `Use the ${skill} skill.`,

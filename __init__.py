@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 import threading
 import uuid
 from pathlib import Path
@@ -36,9 +37,6 @@ SKILLS_REPO_URL = "https://github.com/voxel51/fiftyone-skills"
 _pending_operations = {}
 
 
-# ---------------------------------------------------------------------------
-# Guardrail Layer
-# ---------------------------------------------------------------------------
 
 
 class GuardrailLayer:
@@ -180,9 +178,6 @@ class GuardrailLayer:
         )
 
 
-# ---------------------------------------------------------------------------
-# MCP Client Manager
-# ---------------------------------------------------------------------------
 
 
 def _run_in_new_thread(coro):
@@ -318,9 +313,6 @@ def _mcp_to_anthropic_tool(mcp_tool):
     }
 
 
-# ---------------------------------------------------------------------------
-# Skills Loader
-# ---------------------------------------------------------------------------
 
 
 def _ensure_skills_dir(skills_dir):
@@ -443,9 +435,6 @@ class SkillsLoader:
         return base
 
 
-# ---------------------------------------------------------------------------
-# Private helpers
-# ---------------------------------------------------------------------------
 
 
 def _get_api_key(ctx):
@@ -602,51 +591,91 @@ def _run_streaming_loop(
         ``ctx.trigger()`` calls sent to the frontend
     """
     max_tool_loops = 10
+    max_retries = 3
+    retry_delays = [1, 2, 4]
 
     for _ in range(max_tool_loops):
-        try:
-            with client.messages.stream(
-                model=model,
-                max_tokens=max_tokens,
-                system=system_prompt,
-                messages=messages,
-                tools=tools if tools else [],
-            ) as stream:
-                for event in stream:
-                    event_type = getattr(event, "type", None)
+        final_message = None
+        for attempt in range(max_retries):
+            try:
+                with client.messages.stream(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system_prompt,
+                    messages=messages,
+                    tools=tools if tools else [],
+                ) as stream:
+                    for event in stream:
+                        event_type = getattr(event, "type", None)
 
-                    if event_type == "content_block_start":
-                        cb = getattr(event, "content_block", None)
-                        if cb and getattr(cb, "type", None) == "tool_use":
-                            yield ctx.trigger(
-                                "%s/tool_call_start" % PLUGIN_NAME,
-                                {
-                                    "tool_id": cb.id,
-                                    "tool_name": cb.name,
-                                    "message_id": message_id,
-                                },
-                            )
+                        if event_type == "content_block_start":
+                            cb = getattr(event, "content_block", None)
+                            if cb and getattr(cb, "type", None) == "tool_use":
+                                yield ctx.trigger(
+                                    "%s/tool_call_start" % PLUGIN_NAME,
+                                    {
+                                        "tool_id": cb.id,
+                                        "tool_name": cb.name,
+                                        "message_id": message_id,
+                                    },
+                                )
 
-                    elif event_type == "content_block_delta":
-                        delta = getattr(event, "delta", None)
-                        delta_type = getattr(delta, "type", None)
-                        if delta and delta_type == "text_delta":
-                            yield ctx.trigger(
-                                "%s/stream_chunk" % PLUGIN_NAME,
-                                {
-                                    "delta": delta.text,
-                                    "message_id": message_id,
-                                },
-                            )
+                        elif event_type == "content_block_delta":
+                            delta = getattr(event, "delta", None)
+                            delta_type = getattr(delta, "type", None)
+                            if delta and delta_type == "text_delta":
+                                yield ctx.trigger(
+                                    "%s/stream_chunk" % PLUGIN_NAME,
+                                    {
+                                        "delta": delta.text,
+                                        "message_id": message_id,
+                                    },
+                                )
 
-                final_message = stream.get_final_message()
+                    final_message = stream.get_final_message()
+                    break
 
-        except Exception as e:
-            logger.error("Claude API error: %s", e)
-            yield ctx.trigger(
-                "%s/stream_error" % PLUGIN_NAME,
-                {"error": str(e), "message_id": message_id},
-            )
+            except Exception as e:
+                status = getattr(e, "status_code", None)
+                is_overloaded = status == 529 or "overloaded" in str(e).lower()
+                is_last_attempt = attempt == max_retries - 1
+
+                if is_overloaded and not is_last_attempt:
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        "Anthropic API overloaded, retrying in %ds"
+                        " (attempt %d/%d)",
+                        delay,
+                        attempt + 1,
+                        max_retries,
+                    )
+                    retry_msg = (
+                        "\n\n_API busy, retrying in %ds…_" % delay
+                    )
+                    yield ctx.trigger(
+                        "%s/stream_chunk" % PLUGIN_NAME,
+                        {
+                            "delta": retry_msg,
+                            "message_id": message_id,
+                        },
+                    )
+                    time.sleep(delay)
+                    continue
+
+                logger.error("Claude API error: %s", e)
+                error_msg = (
+                    "The Anthropic API is currently overloaded. "
+                    "Please try again in a moment."
+                    if is_overloaded
+                    else str(e)
+                )
+                yield ctx.trigger(
+                    "%s/stream_error" % PLUGIN_NAME,
+                    {"error": error_msg, "message_id": message_id},
+                )
+                return
+
+        if final_message is None:
             return
 
         stop_reason = getattr(final_message, "stop_reason", "end_turn")
@@ -783,9 +812,6 @@ def _run_streaming_loop(
     )
 
 
-# ---------------------------------------------------------------------------
-# Operators
-# ---------------------------------------------------------------------------
 
 
 class SendMessage(foo.Operator):
@@ -1153,9 +1179,6 @@ class ClearHistory(foo.Operator):
             return {"cleared": False, "error": str(e)}
 
 
-# ---------------------------------------------------------------------------
-# Registration
-# ---------------------------------------------------------------------------
 
 
 def register(plugin):
