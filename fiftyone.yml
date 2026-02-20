@@ -1,6 +1,6 @@
 name: "@adonaivera/claude-agent"
-version: "1.0.0"
-description: "Claude AI agent panel for FiftyOne"
+version: "2.0.0"
+description: "Voxel Agent — production-grade AI agent panel with MCP tools, skills, and guardrails"
 fiftyone:
   version: ">=0.23.7"
 url: "https://github.com/AdonaiVera/claude-agent"
@@ -8,5 +8,19 @@ license: "Apache-2.0"
 js_bundle: dist/index.umd.js
 operators:
   - send_message
+  - confirm_operation
+  - cancel_operation
+  - load_config
+  - save_config
+  - clear_history
+  - stream_message_start
+  - stream_chunk
+  - stream_complete
+  - stream_error
+  - tool_call_start
+  - tool_result
+  - tool_blocked
+  - confirmation_required
 secrets:
   - ANTHROPIC_API_KEY
+  - FIFTYONE_SKILLS_DIR

@@ -1,1 +1,3 @@
 anthropic>=0.30.0
+mcp>=0.9.1
+fiftyone-mcp-server>=0.1.0
