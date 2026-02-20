@@ -13,15 +13,21 @@ import SmartToyIcon from "@mui/icons-material/SmartToy";
 import { ClaudeAgentPanel } from "./components/ClaudeAgentPanel";
 import { ALL_OPERATORS } from "./operators";
 
+const PLUGIN_NAME = "@adonaivera/claude-agent";
+
 registerComponent({
   name: "claude_agent",
   label: "Voxel Agent",
   component: ClaudeAgentPanel,
   type: PluginComponentType.Panel,
-  activator: () => true,
+  activator: isActive,
   Icon: SmartToyIcon,
 });
 
+function isActive() {
+  return true;
+}
+
 for (const OperatorClass of ALL_OPERATORS) {
-  registerOperator(new OperatorClass());
+  registerOperator(OperatorClass, PLUGIN_NAME);
 }

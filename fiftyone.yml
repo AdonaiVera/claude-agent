@@ -2,7 +2,7 @@ name: "@adonaivera/claude-agent"
 version: "2.0.0"
 description: "Voxel Agent — production-grade AI agent panel with MCP tools, skills, and guardrails"
 fiftyone:
-  version: ">=0.23.7"
+  version: ">=1.0.0"
 url: "https://github.com/AdonaiVera/claude-agent"
 license: "Apache-2.0"
 js_bundle: dist/index.umd.js

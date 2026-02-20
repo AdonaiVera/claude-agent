@@ -34,7 +34,6 @@ export const ConfirmationModal: React.FC = () => {
 
   const handleConfirm = async () => {
     setPending(null);
-    // Update tool call status to executing
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== pending.messageId) return m;
@@ -52,7 +51,6 @@ export const ConfirmationModal: React.FC = () => {
   };
 
   const handleCancel = async () => {
-    // Update tool call status to blocked
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== pending.messageId) return m;
